@@ -1,57 +1,65 @@
-// ignore_for_file: avoid_print
-
-import 'package:circular_countdown_timer/circular_countdown_timer.dart';
+import 'package:duration_picker/duration_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:productivity_app/model/interval_model.dart';
+import 'package:productivity_app/screens/timer_page.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _MyHomePageState extends State<MyHomePage> {
+  List<IntervalModel> intervals = [
+    IntervalModel(intervalType: 'Work', durationInMinutes: 30),
+    IntervalModel(intervalType: 'Rest', durationInMinutes: 5)
+  ];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
+      appBar: AppBar(
+        title: const Text('Select Duration'),
+      ),
+      body: Column(
+          children: List.generate(intervals.length,
+              (index) => _buildIntervalText(interval: intervals[index]))),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+        child: ElevatedButton(
+          onPressed: _handlePress,
+          child: const Text('Next'),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIntervalText({required IntervalModel interval}) {
+    return Builder(
+      builder: (context) => InkWell(
+        onTap: () async {
+          var resultingDuration = await showDurationPicker(
+            context: context,
+            initialTime: Duration(minutes: interval.durationInMinutes),
+          );
+          setState(() {
+            interval.durationInMinutes = resultingDuration!.inMinutes;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'Selected ${interval.intervalType} duration: ${interval.durationInMinutes} minutes')));
+        },
+        child: Container(
+          margin: const EdgeInsets.all(12),
+          color: Colors.black12,
+          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              CircularCountDownTimer(
-                duration: 3600,
-                initialDuration: 0,
-                controller: CountDownController(),
-                width: MediaQuery.of(context).size.width / 2,
-                height: MediaQuery.of(context).size.height / 2,
-                ringColor: Colors.black26,
-                ringGradient: null,
-                fillColor: Colors.deepOrangeAccent,
-                fillGradient: null,
-                backgroundColor: Colors.teal[600],
-                backgroundGradient: null,
-                strokeWidth: 20.0,
-                strokeCap: StrokeCap.round,
-                textStyle: const TextStyle(
-                    fontSize: 33.0,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold),
-                textFormat: CountdownTextFormat.MM_SS,
-                isReverse: true,
-                isReverseAnimation: false,
-                isTimerTextShown: true,
-                autoStart: true,
-                onStart: () {},
-                onComplete: () {},
+              Text(
+                '${interval.intervalType} Interval (minutes)',
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildButton(icon: Icons.restart_alt_outlined),
-                  _buildButton(icon: Icons.play_arrow_outlined),
-                  _buildButton(icon: Icons.cancel_outlined),
-                ],
-              )
+              Text(interval.durationInMinutes.toString())
             ],
           ),
         ),
@@ -59,7 +67,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  IconButton _buildButton({required IconData icon}) {
-    return IconButton(onPressed: () => print('pressed'), icon: Icon(icon));
+  void _handlePress() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TimerPage(intervals: intervals),
+        ));
   }
 }
